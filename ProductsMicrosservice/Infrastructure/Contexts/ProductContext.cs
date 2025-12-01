@@ -1,0 +1,14 @@
+using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace Infrastructure.Contexts;
+
+public class ProductContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    public ProductContext(DbContextOptions<ProductContext> options) 
+        : base(options)
+    {
+    }
+}
