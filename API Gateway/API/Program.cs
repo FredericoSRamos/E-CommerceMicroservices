@@ -1,7 +1,9 @@
 using System.Text;
+using Domain.Contracts;
 using Domain.Entities;
 using Infrastructure.Context;
 using Infrastructure.Contracts;
+using Infrastructure.MessageQueue;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -34,6 +36,10 @@ builder.Services.AddOpenApiDocument(document =>
         new AspNetCoreOperationSecurityScopeProcessor("JWT")
     );
 });
+
+builder.Services.AddSingleton<IMessageBus>(sp =>
+    new RabbitMQMessageBus(builder.Configuration.GetValue<string>("RabbitMQ:ConnectionString"))
+);
 
 builder.Services.AddHttpClient("SalesAPI", client =>
 {

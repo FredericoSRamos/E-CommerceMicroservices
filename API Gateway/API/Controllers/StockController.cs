@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using Application.DTOs;
+using Domain.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,10 +13,12 @@ namespace API.Controllers;
 public class StockController : ControllerBase
 {
     private readonly HttpClient _httpClient;
+    private readonly IMessageBus _bus;
 
-    public StockController(IHttpClientFactory httpClientFactory)
+    public StockController(IHttpClientFactory httpClientFactory, IMessageBus bus)
     {
         _httpClient = httpClientFactory.CreateClient("StockAPI");
+        _bus = bus;
     }
     
     [HttpGet]
@@ -69,24 +73,14 @@ public class StockController : ControllerBase
     {
         try
         {
-            var requestBody = Request.Body;
+            using var reader = new StreamReader(Request.Body);
+            var bodyString = await reader.ReadToEndAsync();
             
-            var content = new StringContent(
-                requestBody.ToString(),
-                Encoding.UTF8,
-                Request.ContentType ?? "application/json"
-            );
+            var product = JsonSerializer.Deserialize<ProductDTO>(bodyString);
             
-            var response = await _httpClient.PostAsync(_httpClient.BaseAddress, content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return StatusCode((int)response.StatusCode, "An error occurred!");
-            }
-
-            var createdProduct = await response.Content.ReadAsStringAsync();
-
-            return Ok(createdProduct);
+            await _bus.PublishAsync("create_product_queue", product);
+            
+            return Accepted("Product sent to processing");
         }
         catch (Exception ex)
         {

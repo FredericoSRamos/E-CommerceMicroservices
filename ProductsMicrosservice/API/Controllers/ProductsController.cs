@@ -1,3 +1,4 @@
+using Application.Services;
 using Domain.Entities;
 using Infrastructure.Contracts;
 using Microsoft.AspNetCore.Mvc;
@@ -41,7 +42,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var product = await _productsRepository.Create(productData);
+            var product = await new CreateProductService(_productsRepository).CreateProduct(productData);
 
             return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
         }
